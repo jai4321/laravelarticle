@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Article;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 
 class ArticleController extends Controller
 {
@@ -85,7 +86,7 @@ class ArticleController extends Controller
             return response()->json(["message" => "Update Successfully", "Article" => $article], 200);
         } catch (\Throwable $e) {
             return response()->json([
-                'message' =>  $e->getMessage(),
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -104,6 +105,33 @@ class ArticleController extends Controller
             return response()->json([
                 'message' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    public function encrypt(Request $request)
+    {
+        $request->validate( [
+            'data' => 'required|string',
+        ]);
+
+        $apiKey = Auth::user()->api_key;
+        $encryptedData = Crypt::encrypt($request->input('data'), false, $apiKey);
+
+        return response()->json(['encrypted_data' => $encryptedData]);
+    }
+    public function decrypt(Request $request)
+    {
+        $request->validate( [
+            'data' => 'required|string',
+        ]);
+
+        $apiKey = Auth::user()->api_key;
+
+        try {
+            $decryptedData = Crypt::decrypt($request->input('data'), false, $apiKey);
+            return response()->json(['decrypted_data' => $decryptedData]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Invalid encrypted data.'], 400);
         }
     }
 }

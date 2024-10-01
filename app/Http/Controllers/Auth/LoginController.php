@@ -15,7 +15,6 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
-            // Generate a new personal access token
             $token = $user->createToken('Personal Access Token')->plainTextToken;
             return response()->json([
                 'message' => 'Login successful',
