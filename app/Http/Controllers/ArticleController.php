@@ -49,15 +49,17 @@ class ArticleController extends Controller
 
     public function show($id)
     {
+
         try {
-            $article = Article::where('id', $id)->where('user_id', Auth::id())->first();
+            $article = Article::where('id', $id)->first();
+            $this->authorize('view', $article);
             if (empty($article)) {
                 return response()->json(["message" => "No Article Found"], 200);
             }
             return response()->json($article, 200);
         } catch (\Throwable $e) {
             return response()->json([
-                'message' => 'Error fetching article: ' . $e->getMessage(),
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -66,7 +68,7 @@ class ArticleController extends Controller
     {
 
         try {
-            $article = Article::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+            $article = Article::where('id', $id)->firstOrFail();
 
             if (!empty($request->get('title')) && !empty($request->get('content'))) {
                 $article->title = $request->get('title');
@@ -78,11 +80,12 @@ class ArticleController extends Controller
             } else {
                 return response()->json(["message" => "Nothing to be Updated"], 200);
             }
+            $this->authorize('update', $article);
             $article->save();
             return response()->json(["message" => "Update Successfully", "Article" => $article], 200);
         } catch (\Throwable $e) {
             return response()->json([
-                'message' => 'Error updating article: ' . $e->getMessage(),
+                'message' =>  $e->getMessage(),
             ], 500);
         }
     }
@@ -90,15 +93,16 @@ class ArticleController extends Controller
     public function destroy($id)
     {
         try {
-            $article = Article::where('id', $id)->where('user_id', Auth::id())->first();
+            $article = Article::where('id', $id)->first();
             if (empty($article)) {
                 return response()->json(["message" => "No Article Found"], 200);
             }
+            $this->authorize('update', $article);
             $article->delete();
             return response()->json(['message' => 'Article deleted'], 200);
         } catch (\Throwable $e) {
             return response()->json([
-                'message' => 'Error deleting article: ' . $e->getMessage(),
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
