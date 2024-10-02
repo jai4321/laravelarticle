@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Auth;
 use Closure;
+use Illuminate\Encryption\Encrypter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,18 +18,26 @@ class DecryptMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->has('data')) {
-            try {
-                $apiKey = Auth::user()->api_key;
-                $decryptedData = json_decode(Crypt::decrypt($request->input('data'), false, $apiKey), true);
-                $request->merge($decryptedData);
-            } catch (\Exception $e) {
-                return response()->json(['message' => 'Invalid encrypted data.'], 400);
+        if (!empty($request->get('data'))) {
+            $user = Auth::user();
+            if ($user && $request->bearerToken()) {
+
+                try {
+                    $token = $request->bearerToken();
+                    $key = hash('sha256', $token, true);
+                    $encrypter = new Encrypter($key, 'AES-256-CBC');
+                    $dataToDecrypt = $request->input('data');
+                    $decryptedData = $encrypter->decrypt($dataToDecrypt);
+                    $request->merge(['data' => $decryptedData]);
+                    $response = $next($request);
+                    return $response;
+                } catch (\Throwable $e) {
+                    return response()->json([
+                        'message' => $e->getMessage(),
+                    ], 500);
+                }
             }
         }
-        $response = $next($request);
-        $responseData = $response->getData(true);
-        $response->setContent(Crypt::encrypt(json_encode($responseData), false, $apiKey));
-        return $response;
+
     }
 }

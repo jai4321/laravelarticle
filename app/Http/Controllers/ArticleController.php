@@ -110,28 +110,18 @@ class ArticleController extends Controller
 
     public function encrypt(Request $request)
     {
-        $request->validate( [
+        $validate = $request->validate([
             'data' => 'required|string',
         ]);
-
-        $apiKey = Auth::user()->api_key;
-        $encryptedData = Crypt::encrypt($request->input('data'), false, $apiKey);
-
-        return response()->json(['encrypted_data' => $encryptedData]);
+        $data = $validate['data'];
+        return response()->json(['encrypted_data' => $data]);
     }
     public function decrypt(Request $request)
     {
-        $request->validate( [
+        $validate = $request->validate([
             'data' => 'required|string',
         ]);
-
-        $apiKey = Auth::user()->api_key;
-
-        try {
-            $decryptedData = Crypt::decrypt($request->input('data'), false, $apiKey);
-            return response()->json(['decrypted_data' => $decryptedData]);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Invalid encrypted data.'], 400);
-        }
+        $data = $validate['data'];
+        return response()->json(['encrypted_data' => $data]);
     }
 }
